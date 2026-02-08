@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -16,13 +17,64 @@ body { font-family: system-ui, -apple-system, sans-serif; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script type="text/babel">
-// Storage polyfill for standalone use
+// GitHub API Storage - data.json in repo
+var GH = {
+  token: "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",
+  repo: "hiromikakehashi/fohwueho2689",
+  file: "data.json",
+  sha: null,
+  cache: null,
+  lastFetch: 0
+};
+
+async function ghGet() {
+  // Cache for 5 seconds to avoid excessive API calls
+  if (GH.cache !== null && Date.now() - GH.lastFetch < 5000) return GH.cache;
+  try {
+    var resp = await fetch("https://api.github.com/repos/" + GH.repo + "/contents/" + GH.file, {
+      headers: {"Authorization": "Bearer " + GH.token, "Accept": "application/vnd.github.v3+json"}
+    });
+    if (resp.status === 404) { GH.sha = null; GH.cache = null; return null; }
+    var json = await resp.json();
+    GH.sha = json.sha;
+    var decoded = decodeURIComponent(escape(atob(json.content.replace(/\n/g, ""))));
+    GH.cache = decoded;
+    GH.lastFetch = Date.now();
+    return decoded;
+  } catch(e) { console.error("ghGet error:", e); return GH.cache; }
+}
+
+async function ghSet(content) {
+  try {
+    // Get latest SHA first to avoid conflicts
+    try {
+      var resp0 = await fetch("https://api.github.com/repos/" + GH.repo + "/contents/" + GH.file, {
+        headers: {"Authorization": "Bearer " + GH.token, "Accept": "application/vnd.github.v3+json"}
+      });
+      if (resp0.ok) { var j0 = await resp0.json(); GH.sha = j0.sha; }
+    } catch(e2) {}
+    
+    var body = {message: "update data", content: btoa(unescape(encodeURIComponent(content)))};
+    if (GH.sha) body.sha = GH.sha;
+    var resp = await fetch("https://api.github.com/repos/" + GH.repo + "/contents/" + GH.file, {
+      method: "PUT",
+      headers: {"Authorization": "Bearer " + GH.token, "Content-Type": "application/json", "Accept": "application/vnd.github.v3+json"},
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) { var err = await resp.text(); console.error("ghSet error:", err); return false; }
+    var json = await resp.json();
+    GH.sha = json.content.sha;
+    GH.cache = content;
+    GH.lastFetch = Date.now();
+    return true;
+  } catch(e) { console.error("ghSet error:", e); return false; }
+}
+
 if (!window.storage) {
   window.storage = {
-    _d: {},
-    get: async function(k) { var v = localStorage.getItem("hl_"+k); return v ? {key:k,value:v} : null; },
-    set: async function(k,v) { localStorage.setItem("hl_"+k, v); return {key:k,value:v}; },
-    delete: async function(k) { localStorage.removeItem("hl_"+k); return {key:k,deleted:true}; },
+    get: async function(k) { var v = await ghGet(); return v ? {key:k,value:v} : null; },
+    set: async function(k,v) { var ok = await ghSet(v); return ok ? {key:k,value:v} : null; },
+    delete: async function(k) { await ghSet("[]"); return {key:k,deleted:true}; },
     list: async function(p) { return {keys:[]}; }
   };
 }
@@ -178,7 +230,7 @@ function parkDays(y,m) {
 function doAnalyze(hist) {
   var dc = {};
   hist.forEach(function(r){dc[r.dt]=(dc[r.dt]||0)+1;});
-  var fd = Object.keys(dc).filter(function(d){return dc[d]>=10;}).sort();
+  var fd = Object.keys(dc).sort();
   var info = {};
   D.forEach(function(d){
     info[d] = {wd:new Set(),ph:{}};
@@ -187,17 +239,22 @@ function doAnalyze(hist) {
   hist.forEach(function(r){
     var di = info[r.d]; if(!di) return;
     di.wd.add(r.dt);
-    if(!di.ph[r.s][r.p]) di.ph[r.s][r.p]={c:0,li:-999};
+    if(!di.ph[r.s][r.p]) di.ph[r.s][r.p]={c:0,ld:""};
     di.ph[r.s][r.p].c++;
-    var idx = fd.indexOf(r.dt);
-    if(idx>=0 && idx>di.ph[r.s][r.p].li) di.ph[r.s][r.p].li=idx;
+    if(r.dt > di.ph[r.s][r.p].ld) di.ph[r.s][r.p].ld = r.dt;
   });
   return {info:info,fd:fd,dc:dc};
 }
 
+function daysDiff(d1,d2) {
+  if(!d1||!d2) return 999;
+  return Math.round((new Date(d2)-new Date(d1))/86400000);
+}
+
 function doPredict(hist) {
   var a = doAnalyze(hist);
-  var li = a.fd.length-1;
+  var lastDate = a.fd.length > 0 ? a.fd[a.fd.length-1] : "2026-01-01";
+  var totalDays = a.fd.length;
   var res = {};
   SH.forEach(function(show){
     var slots = SLOTS[show] || [];
@@ -207,7 +264,7 @@ function doPredict(hist) {
         var ph = a.info[dancer] && a.info[dancer].ph[show] && a.info[dancer].ph[show][slot.p];
         var wd = a.info[dancer] ? a.info[dancer].wd.size : 0;
         if(!ph||!ph.c||!wd) return {dancer:dancer,c:0,ds:999,rate:0,od:0.5};
-        var rate=ph.c/wd; var ei=1/rate; var ds=li-ph.li; var od=ds/ei;
+        var rate=ph.c/wd; var ei=1/rate; var ds=daysDiff(ph.ld,lastDate); var od=ds/ei;
         return {dancer:dancer,c:ph.c,ds:ds,rate:Math.round(rate*100),od:od};
       });
       scored.sort(function(a,b){return b.od-a.od;});
@@ -280,9 +337,16 @@ function App() {
   var oshi = "もえか";
   var _om = useState(1);
   var oMonth = _om[0]; var setOMonth = _om[1];
+  var _ld = useState(true);
+  var loading = _ld[0]; var setLoading = _ld[1];
+  var _sv = useState("");
+  var syncMsg = _sv[0]; var setSyncMsg = _sv[1];
 
   useEffect(function(){
-    (async function(){try{var r=await window.storage.get("hl-v7");if(r&&r.value)setUh(JSON.parse(r.value));}catch(e){}})();
+    (async function(){
+      try{var r=await window.storage.get("hl-v7");if(r&&r.value)setUh(JSON.parse(r.value));}catch(e){}
+      setLoading(false);
+    })();
   },[]);
 
   var allH = useMemo(function(){return H.concat(uh);},[uh]);
@@ -301,10 +365,19 @@ function App() {
 
   var saveParsed = useCallback(async function(){
     if(!parsed.length) return;
-    var nu = uh.concat(parsed); setUh(nu);
-    try{await window.storage.set("hl-v7",JSON.stringify(nu));}catch(e){}
+    setSyncMsg("保存中...");
+    try{
+      var existing = [];
+      var r = await window.storage.get("hl-v7");
+      if(r&&r.value) existing = JSON.parse(r.value);
+      var nu = existing.concat(parsed);
+      setUh(nu);
+      await window.storage.set("hl-v7",JSON.stringify(nu));
+      setSyncMsg("✅ "+parsed.length+"件保存しました");
+    }catch(e){setSyncMsg("❌ 保存に失敗しました");}
     setTInput(""); setParsed([]);
-  },[parsed,uh]);
+    setTimeout(function(){setSyncMsg("");},3000);
+  },[parsed]);
 
   var saveManual = useCallback(async function(){
     if(!iDate) return;
@@ -312,10 +385,23 @@ function App() {
     Object.entries(iEnt).forEach(function(kv){
       if(kv[1]){var parts=kv[0].split("|||");ne.push({d:parts[0],dt:iDate,s:parts[1],p:kv[1]});}
     });
-    if(ne.length>0){var nu=uh.concat(ne);setUh(nu);try{await window.storage.set("hl-v7",JSON.stringify(nu));}catch(e){}setIEnt({});}
-  },[iDate,iEnt,uh]);
+    if(ne.length>0){
+      setSyncMsg("保存中...");
+      try{
+        var existing = [];
+        var r = await window.storage.get("hl-v7");
+        if(r&&r.value) existing = JSON.parse(r.value);
+        var nu = existing.concat(ne);
+        setUh(nu);
+        await window.storage.set("hl-v7",JSON.stringify(nu));
+        setSyncMsg("✅ "+ne.length+"件保存しました");
+      }catch(e){setSyncMsg("❌ 保存に失敗しました");}
+      setIEnt({});
+      setTimeout(function(){setSyncMsg("");},3000);
+    }
+  },[iDate,iEnt]);
 
-  var delUD = useCallback(async function(){setUh([]);try{await window.storage.delete("hl-v7");}catch(e){}},[]);
+  var delUD = useCallback(async function(){if(!confirm("追加データを全て削除しますか？"))return;setUh([]);try{await window.storage.delete("hl-v7");}catch(e){}},[]);
 
   var tabs = [{id:"predict",l:"🔮 予想"},{id:"oshi",l:"💖 推し"},{id:"input",l:"📝 入力"},{id:"stats",l:"📊 統計"},{id:"history",l:"📅 履歴"}];
 
@@ -324,7 +410,7 @@ function App() {
       <div style={{background:"linear-gradient(135deg,#ec4899 0%,#8b5cf6 50%,#3b82f6 100%)",padding:"20px 24px 16px",color:"#fff"}}>
         <div style={{fontSize:11,opacity:0.9,letterSpacing:"0.1em",marginBottom:4}}>🎪 ハーモニーランド</div>
         <div style={{fontSize:22,fontWeight:900}}>ダンサーシフト予想</div>
-        <div style={{fontSize:11,opacity:0.8,marginTop:4}}>データ: {allH.length}件 / {allDts.length}日分 | 推し: {oshi}💖</div>
+        <div style={{fontSize:11,opacity:0.8,marginTop:4}}>データ: {allH.length}件 / {allDts.length}日分 | 推し: {oshi}💖 | ☁️同期</div>
       </div>
 
       <div style={{display:"flex",background:"#fff",borderBottom:"1px solid #e2e8f0",position:"sticky",top:0,zIndex:10}}>
@@ -333,7 +419,14 @@ function App() {
         );})}
       </div>
 
-      <div style={{padding:16,maxWidth:640,margin:"0 auto"}}>
+      {syncMsg && <div style={{position:"fixed",top:70,left:"50%",transform:"translateX(-50%)",background:"#1e293b",color:"#fff",padding:"8px 20px",borderRadius:20,fontSize:12,fontWeight:600,zIndex:100,boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>{syncMsg}</div>}
+
+      {loading ? (
+        <div style={{padding:60,textAlign:"center"}}>
+          <div style={{fontSize:24,marginBottom:8}}>☁️</div>
+          <div style={{fontSize:13,color:"#64748b"}}>データ読み込み中...</div>
+        </div>
+      ) : <div style={{padding:16,maxWidth:640,margin:"0 auto"}}>
 
         {tab==="predict" && (
           <div>
@@ -563,12 +656,15 @@ function App() {
               </div>
             )}
 
-            {uh.length>0 && (
-              <div style={{marginTop:16,textAlign:"center"}}>
-                <div style={{fontSize:11,color:"#94a3b8",marginBottom:6}}>追加データ: {uh.length}件</div>
-                <button onClick={delUD} style={{padding:"6px 16px",borderRadius:6,border:"1px solid #fca5a5",background:"#fff",color:"#ef4444",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>追加データを全削除</button>
-              </div>
-            )}
+            <div style={{marginTop:16,background:"#fff",borderRadius:12,padding:16,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#475569",marginBottom:8}}>☁️ データ管理</div>
+              <div style={{fontSize:11,color:"#94a3b8",marginBottom:8,lineHeight:1.6}}>データはGitHubに自動保存されます。PC・スマホどちらからでも同じデータにアクセスできます。</div>
+              <div style={{fontSize:11,color:"#64748b",marginBottom:8}}>追加データ: {uh.length}件</div>
+              <button onClick={async function(){setSyncMsg("同期中...");try{var r=await window.storage.get("hl-v7");if(r&&r.value){setUh(JSON.parse(r.value));setSyncMsg("✅ 最新データを取得しました("+JSON.parse(r.value).length+"件)");}else{setSyncMsg("データなし");}}catch(e){setSyncMsg("❌ 取得に失敗");}setTimeout(function(){setSyncMsg("");},3000);}} style={{width:"100%",padding:10,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#475569",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",marginBottom:6}}>🔄 最新データを取得</button>
+              {uh.length>0 && (
+                <button onClick={delUD} style={{width:"100%",padding:8,borderRadius:6,border:"1px solid #fca5a5",background:"#fff",color:"#ef4444",fontSize:11,cursor:"pointer",fontFamily:"inherit",marginTop:4}}>追加データを全削除</button>
+              )}
+            </div>
           </div>
         )}
 
@@ -666,7 +762,8 @@ function App() {
         )}
 
       </div>
-      <div style={{textAlign:"center",padding:"24px 16px 40px",fontSize:10,color:"#94a3b8"}}>ハーモニーランド ダンサーシフト予想 v7.0</div>
+      <div style={{textAlign:"center",padding:"24px 16px 40px",fontSize:10,color:"#94a3b8"}}>ハーモニーランド ダンサーシフト予想 v9.0 ☁️</div>
+    </div>}
     </div>
   );
 }
