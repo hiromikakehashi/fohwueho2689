@@ -75,7 +75,7 @@ const H = RAW.map(r => ({d:r[0],dt:r[1],s:r[2],p:r[3]}));
 
 const D = ["けん","こっきー","りくと","ちびもえ","かの","ゆいこ","ちーちゃん","ななこ","かんな","かなで","まゆか","もえか","もも","いおり","みよ","ゆうな","ひな","ゆみ","ここな","かのん","みずき"];
 const SH = ["ビンゴ","パレード","季節ショー","ジョインハンズ"];
-const CL = new Set(["2026-01-07","2026-01-08","2026-01-14","2026-01-15","2026-01-21","2026-01-22","2026-01-28","2026-01-29","2026-02-04","2026-02-05","2026-02-12","2026-02-25","2026-02-26","2026-03-05","2026-03-11","2026-03-12","2026-03-19"]);
+const CL = new Set(["2026-01-07","2026-01-08","2026-01-14","2026-01-15","2026-01-21","2026-01-22","2026-01-28","2026-01-29","2026-02-04","2026-02-05","2026-02-12","2026-02-25","2026-02-26","2026-03-05","2026-03-11","2026-03-12","2026-03-19","2026-04-08","2026-04-09","2026-04-15","2026-04-22","2026-04-23"]);
 const FULL_THRESHOLD = 28;
 function fullDays(hist) {
   var dc = {};
@@ -102,12 +102,12 @@ const SLOTS = {
     {n:"紫ギフト",p:"紫ギフト",o:1},
   ],
   "季節ショー":[
-    {n:"メロン",p:"メロン"},{n:"リンゴ",p:"リンゴ"},
-    {n:"ブルーベリー①",p:"ブルーベリー",f:["ななこ","いおり","かんな"]},
-    {n:"ブルーベリー②",p:"ブルーベリー",f:["まゆか","かなで","みずき"]},
-    {n:"ブルーベリー③",p:"ブルーベリー",f:["もえか","みよ","ゆみ"]},
-    {n:"パイナップル①",p:"パイナップル",f:["ゆいこ","ひな","かの"]},
-    {n:"パイナップル②",p:"パイナップル",f:["ゆうな","ここな","かのん"]},
+    {n:"B赤",p:"B赤",f:["ちびもえ","もも","ちーちゃん"]},
+    {n:"Bピンク",p:"Bピンク",f:["ななこ","かのん","ゆうな"]},
+    {n:"Bオレンジ",p:"Bオレンジ",f:["かの","かなで","いおり"]},
+    {n:"B黄色",p:"B黄色",f:["かんな","ゆみ","まゆか"]},
+    {n:"B緑",p:"B緑",f:["みよ","ひな"]},
+    {n:"B紫",p:"B紫",f:["ここな","みずき","もえか"]},
   ],
   "ジョインハンズ":[{n:"オレンジ",p:"オレンジ"},{n:"青リボン",p:"青リボン"},{n:"緑リボン",p:"緑リボン"}],
 };
@@ -134,12 +134,12 @@ var JH_GREEN = ["ここな","かのん","みずき","かの","かなで","いお
 var BINGO_MC = ["ひな","みよ","ちーちゃん","こっきー","ななこ","まゆか","ゆみ","もも","ゆうな","もえか","けん","りくと","ちびもえ"];
 var BINGO_AC = ["かの","かんな","かなで","かのん","ここな","みずき","いおり","ちびもえ","もも","ゆうな","ゆいこ","ちーちゃん","ひな","ゆみ","まゆか"];
 
-const PC = {"水色案内人":"#7dd3fc","ピンク案内人":"#f9a8d4","紫案内人":"#c4b5fd","黄色案内人":"#fde047","水色少女":"#67e8f9","ピンク少女":"#f472b6","紫少女":"#a78bfa","黄色少女":"#facc15","ピンクカップ":"#fb7185","緑カップ":"#4ade80","水色ドーナツ":"#38bdf8","紫ドーナツ":"#8b5cf6","ピンクギフト":"#ec4899","紫ギフト":"#7c3aed","ビンゴMC":"#f97316","ビンゴAC":"#fb923c","晴れ着MC":"#e11d48","晴れ着":"#be123c","獅子舞":"#dc2626","大抽選会MC":"#ea580c","メロン":"#22c55e","リンゴ":"#ef4444","パイナップル":"#eab308","ブルーベリー":"#6366f1","オレンジ":"#f97316","GIVEU":"#14b8a6","青リボン":"#3b82f6","緑リボン":"#16a34a"};
+const PC = {"水色案内人":"#7dd3fc","ピンク案内人":"#f9a8d4","紫案内人":"#c4b5fd","黄色案内人":"#fde047","水色少女":"#67e8f9","ピンク少女":"#f472b6","紫少女":"#a78bfa","黄色少女":"#facc15","ピンクカップ":"#fb7185","緑カップ":"#4ade80","水色ドーナツ":"#38bdf8","紫ドーナツ":"#8b5cf6","ピンクギフト":"#ec4899","紫ギフト":"#7c3aed","ビンゴMC":"#f97316","ビンゴAC":"#fb923c","晴れ着MC":"#e11d48","晴れ着":"#be123c","獅子舞":"#dc2626","大抽選会MC":"#ea580c","B赤":"#ef4444","Bピンク":"#f9a8d4","Bオレンジ":"#fb923c","B黄色":"#fde047","B緑":"#4ade80","B紫":"#a78bfa","メロン":"#22c55e","リンゴ":"#ef4444","パイナップル":"#eab308","ブルーベリー":"#6366f1","オレンジ":"#f97316","GIVEU":"#14b8a6","青リボン":"#3b82f6","緑リボン":"#16a34a"};
 const LB = new Set(["#fde047","#facc15","#67e8f9","#7dd3fc","#4ade80","#f9a8d4","#fb923c"]);
 const IP = {
   "ビンゴ":["ビンゴMC","ビンゴAC","晴れ着MC","晴れ着","獅子舞","大抽選会MC"],
   "パレード":["水色案内人","ピンク案内人","紫案内人","黄色案内人","水色少女","ピンク少女","紫少女","黄色少女","ピンクカップ","緑カップ","水色ドーナツ","紫ドーナツ","ピンクギフト","紫ギフト"],
-  "季節ショー":["大抽選会MC","メロン","リンゴ","パイナップル","ブルーベリー","オレンジ"],
+  "季節ショー":["B赤","Bピンク","Bオレンジ","B黄色","B緑","B紫"],
   "ジョインハンズ":["GIVEU","オレンジ","青リボン","緑リボン"],
 };
 
@@ -172,7 +172,7 @@ function parseText(text) {
     if (!dateStr) continue;
 
     if (/パレ|パレード|パレパラ/.test(line) && !/🩷|💛|💜|🩵/.test(line)) { curShow = "パレード"; pSec = "少女"; continue; }
-    if (/ショコラ|季節/.test(line) && line.length < 10) { curShow = "季節ショー"; sSec = ""; continue; }
+    if (/ブルーミング|季節/.test(line) && line.length < 15) { curShow = "季節ショー"; sSec = ""; continue; }
     if (/ビンゴ/.test(line) && line.length < 10) { curShow = "ビンゴ"; continue; }
     if (/join|ジョイン|JH/i.test(line) && line.length < 15) { curShow = "ジョインハンズ"; continue; }
     if (!curShow) continue;
@@ -202,12 +202,11 @@ function parseText(text) {
     }
 
     if (curShow === "季節ショー") {
-      if (line.indexOf("🍈") >= 0) { sSec = "メロン"; var n = getName(line); if(n) entries.push({d:n,dt:dateStr,s:"季節ショー",p:"メロン"}); continue; }
-      if (line.indexOf("🍎") >= 0) { sSec = "リンゴ"; var n2 = getName(line); if(n2) entries.push({d:n2,dt:dateStr,s:"季節ショー",p:"リンゴ"}); continue; }
-      if (line.indexOf("🍍") >= 0) { sSec = "パイナップル"; var n3 = getName(line); if(n3) entries.push({d:n3,dt:dateStr,s:"季節ショー",p:"パイナップル"}); continue; }
-      if (line.indexOf("🫐") >= 0) { sSec = "ブルーベリー"; var n4 = getName(line); if(n4) entries.push({d:n4,dt:dateStr,s:"季節ショー",p:"ブルーベリー"}); continue; }
+      var bMap = {"❤️":"B赤","❤":"B赤","🩷":"Bピンク","💙":"Bピンク","🧡":"Bオレンジ","💛":"B黄色","💚":"B緑","💜":"B紫"};
+      var bPos = "";
+      for (var bem in bMap) { if (line.indexOf(bem) >= 0) { bPos = bMap[bem]; break; } }
       var sn = getName(line);
-      if (sn && sSec) entries.push({d:sn,dt:dateStr,s:"季節ショー",p:sSec});
+      if (sn && bPos) entries.push({d:sn,dt:dateStr,s:"季節ショー",p:bPos});
       continue;
     }
 
@@ -358,9 +357,9 @@ function doPredict(hist) {
   });
   res["ジョインハンズ"] = jhPreds;
 
-  // === Seasonal show: keep existing fixed group logic ===
+  // === Seasonal show (ブルーミング): fixed color groups ===
   var seasonPreds = SLOTS["季節ショー"].map(function(slot){
-    var cn = slot.f || D.filter(function(d){var ph=a.info[d].ph["季節ショー"][slot.p];return ph&&ph.c>0;});
+    var cn = slot.f || D.filter(function(d){var ph=a.info[d].ph["季節ショー"]&&a.info[d].ph["季節ショー"][slot.p];return ph&&ph.c>0;});
     var scored = cn.map(function(dancer){
       var ph = a.info[dancer] && a.info[dancer].ph["季節ショー"] && a.info[dancer].ph["季節ショー"][slot.p];
       var wd = a.info[dancer] ? a.info[dancer].wd.size : 0;
@@ -379,7 +378,7 @@ function workPat(hist, dancer) {
   var wd = new Set();
   hist.forEach(function(r){if(r.d===dancer) wd.add(r.dt);});
   var fo = fullDays(hist);
-  var days = parkDays(2026,1).concat(parkDays(2026,2)).concat(parkDays(2026,3));
+  var days = parkDays(2026,1).concat(parkDays(2026,2)).concat(parkDays(2026,3)).concat(parkDays(2026,4));
   var pat = []; var cw=0; var cr=0; var last=null;
   days.forEach(function(d){
     var isW = wd.has(d);
@@ -660,7 +659,7 @@ function App() {
             <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
               <div style={{fontWeight:700,fontSize:14,marginBottom:12}}>📅 日別出演記録</div>
               <div style={{display:"flex",gap:6,marginBottom:12}}>
-                {[1,2,3].map(function(m){return (
+                {[1,2,3,4].map(function(m){return (
                   <button key={m} onClick={function(){setOMonth(m);}} style={{flex:1,padding:"8px 4px",borderRadius:8,border:"1px solid",borderColor:oMonth===m?"#ec4899":"#e2e8f0",background:oMonth===m?"#ec4899":"#fff",color:oMonth===m?"#fff":"#64748b",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{m}月</button>
                 );})}
               </div>
@@ -728,7 +727,7 @@ function App() {
               <div>
                 <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
                   <div style={{fontSize:12,fontWeight:600,color:"#475569",marginBottom:8}}>絵文字テキストを貼り付け</div>
-                  <textarea value={tInput} onChange={function(e){setTInput(e.target.value);}} placeholder={"2月6日\nパレパラ\n🩷かのんちゃん\n...\nショコラ\n🍈🎤りくとくん\n...\nビンゴ\nMC:こっきーさん\n...\njoin\n💙もえかちゃん"} style={{width:"100%",height:200,padding:12,borderRadius:8,border:"1px solid #e2e8f0",fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",lineHeight:1.6}} />
+                  <textarea value={tInput} onChange={function(e){setTInput(e.target.value);}} placeholder={"2月6日\nパレパラ\n🩷かのんちゃん\n...\nブルーミング\n❤️ももかちゃん\n...\nビンゴ\nMC:こっきーさん\n...\njoin\n💙もえかちゃん"} style={{width:"100%",height:200,padding:12,borderRadius:8,border:"1px solid #e2e8f0",fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",lineHeight:1.6}} />
                   <button onClick={doParseText} style={{marginTop:8,width:"100%",padding:12,borderRadius:10,border:"none",cursor:"pointer",background:"linear-gradient(135deg,#8b5cf6,#3b82f6)",color:"#fff",fontSize:14,fontWeight:700,fontFamily:"inherit"}}>🔍 変換プレビュー</button>
                 </div>
                 {parsed.length>0 && (
